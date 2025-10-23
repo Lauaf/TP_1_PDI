@@ -7,70 +7,72 @@ from pathlib import Path
 def escanear_formulario(img):
     formulario = {}
 
-    imgumbral = img <= 150
-    imgfilas = np.diff(imgumbral, axis=0)
-    imgfilassum = np.sum(imgfilas, axis=1)
-    imgfilas_bool = imgfilassum > 900
-    imgfilas_idxs = np.argwhere(imgfilas_bool).ravel()
+    img_umbralizada = img <= 150
+    img_filas = np.diff(img_umbralizada, axis=0)
+    img_filassum = np.sum(img_filas, axis=1)
+    img_filas_bool = img_filassum > 900
+    img_filas_idxs = np.argwhere(img_filas_bool).ravel()
 
-    imgfilas_diff_idxs = np.diff(imgfilas_idxs)
-    indices_a_eliminar = np.where(imgfilas_diff_idxs <= 10)[0]
-    imgfilas_idxs_validos = np.delete(imgfilas_idxs, indices_a_eliminar)
+    img_filas_diff_idxs = np.diff(img_filas_idxs)
+    indices_a_eliminar = np.where(img_filas_diff_idxs <= 10)[0]
+    img_filas_idxs_validos = np.delete(img_filas_idxs, indices_a_eliminar)
 
-    filas_y = np.vstack((imgfilas_idxs_validos[:-1], imgfilas_idxs_validos[1:])).T
+    rangos_filas = np.vstack((img_filas_idxs_validos[:-1], img_filas_idxs_validos[1:])).T
 
-    for i, item in enumerate(filas_y):
+    for i, item in enumerate(rangos_filas):
         fila = img[item[0]:item[1]]
         fila_umbral = fila <= 150
 
-        imgcols = np.diff(fila_umbral, axis=1)
-        imgcolssum = np.sum(imgcols, axis=0)
-        imgcols_bool = imgcolssum >= 30
-        imgcols_idxs = np.argwhere(imgcols_bool).ravel()
+        diferencia_columnas = np.diff(fila_umbral, axis=1)
+        suma_columnas = np.sum(diferencia_columnas, axis=0)
+        columnas_detectadas = suma_columnas >= 30
+        indices_columnas = np.argwhere(columnas_detectadas).ravel()
 
-        imgcols_diff_idxs = np.diff(imgcols_idxs)
-        indices_a_eliminar = np.where(imgcols_diff_idxs <= 2)[0]
-        imgcols_idxs_validos = np.delete(imgcols_idxs, indices_a_eliminar)
+        diferencia_indices_col = np.diff(indices_columnas)
+        indices_a_eliminar = np.where(diferencia_indices_col <= 2)[0]
+        indices_validos_col = np.delete(indices_columnas, indices_a_eliminar)
 
-        if len(imgcols_idxs_validos) < 2:
+
+        if len(indices_validos_col) < 2:
             continue
 
-        columnas_x = np.vstack((imgcols_idxs_validos[:-1], imgcols_idxs_validos[1:])).T
+        rangos_columnas = np.vstack((indices_validos_col[:-1], indices_validos_col[1:])).T
 
-        for j, columna in enumerate(columnas_x):
+
+        for j, columna in enumerate(rangos_columnas):
             ARRIBA = 2
             ABAJO = fila_umbral.shape[0] - 1
             IZQUIERDA = columna[0] + 1
             DERECHA = columna[1]
-            img_col = fila_umbral[ARRIBA:ABAJO, IZQUIERDA:DERECHA] * 255
+            campo_img = fila_umbral[ARRIBA:ABAJO, IZQUIERDA:DERECHA] * 255
 
             if i == 0:
                 continue
             elif i == 1 and j == 1:
-                formulario["nombre"] = img_col
+                formulario["nombre"] = campo_img
             elif i == 2 and j == 1:
-                formulario["edad"] = img_col
+                formulario["edad"] = campo_img
             elif i == 3 and j == 1:
-                formulario["mail"] = img_col
+                formulario["mail"] = campo_img
             elif i == 4 and j == 1:
-                formulario["legajo"] = img_col
+                formulario["legajo"] = campo_img
             elif i == 6:
                 if j == 1:
-                    formulario["preg1_si"] = img_col
+                    formulario["preg1_si"] = campo_img
                 elif j == 2:
-                    formulario["preg1_no"] = img_col
+                    formulario["preg1_no"] = campo_img
             elif i == 7:
                 if j == 1:
-                    formulario["preg2_si"] = img_col
+                    formulario["preg2_si"] = campo_img
                 elif j == 2:
-                    formulario["preg2_no"] = img_col
+                    formulario["preg2_no"] = campo_img
             elif i == 8:
                 if j == 1:
-                    formulario["preg3_si"] = img_col
+                    formulario["preg3_si"] = campo_img
                 elif j == 2:
-                    formulario["preg3_no"] = img_col
+                    formulario["preg3_no"] = campo_img
             elif i == 9 and j == 1:
-                formulario["comentario"] = img_col
+                formulario["comentario"] = campo_img
 
     return formulario
 
@@ -81,17 +83,17 @@ def contar_valores_consecutivos(arr):
 
     resultado = []
     valor_actual = arr[0]
-    conteo_actual = 1
+    contador = 1
 
     for i in range(1, len(arr)):
         if arr[i] == valor_actual:
-            conteo_actual += 1
+            contador += 1
         else:
-            resultado.append((valor_actual, conteo_actual))
+            resultado.append((valor_actual, contador))
             valor_actual = arr[i]
-            conteo_actual = 1
+            contador = 1
 
-    resultado.append((valor_actual, conteo_actual))
+    resultado.append((valor_actual, contador))
     return resultado
 
 
@@ -100,50 +102,50 @@ def reemplazar_false_consecutivo(arr, umbral):
     if len(arr) == 0:
         return arr
 
-    arrm = contar_valores_consecutivos(arr)
+    grupos = contar_valores_consecutivos(arr)
 
-    if len(arrm) == 0:
+    if len(grupos) == 0:
         return arr
 
-    conteos_nuevos = []
+    nuevos_grupos = []
 
-    primero = arrm[0]
-    ultimo = arrm[-1]
+    primer_grupo = grupos[0]
+    ultimo_grupo= grupos[-1]
 
-    for i in range(1, len(arrm) - 1):
-        valor, conteo = arrm[i]
+    for i in range(1, len(grupos) - 1):
+        valor, conteo = grupos[i]
         if not valor and conteo < umbral:
-            conteos_nuevos.append((True, conteo))
+            nuevos_grupos.append((True, conteo))
         else:
-            conteos_nuevos.append(arrm[i])
+            nuevos_grupos.append(grupos[i])
 
-    resultado = [primero] + conteos_nuevos + [ultimo]
-    resultado_array = np.array([valor for valor, conteo in resultado for _ in range(conteo)])
-    return resultado_array
+    resultado = [primer_grupo] + nuevos_grupos + [ultimo_grupo]
+    array_limpio = np.array([valor for valor, conteo in resultado for _ in range(conteo)])
+    return array_limpio
 
 
-def conteo_parrafos(arr):
-    arrm = contar_valores_consecutivos(arr)
-    conteo_parrafos = [conteo for valor, conteo in arrm if valor]
-    return len(conteo_parrafos)
+def cantidad_palabras(arr):
+    grupos = contar_valores_consecutivos(arr)
+    cantidad_palabras = [conteo for valor, conteo in grupos if valor]
+    return len(cantidad_palabras)
 
-def contar_elementos(img, axis, umbral):
-    img_zeros = img == 0
-    img_sum = img_zeros.any(axis=axis)
+def contar_elementos(img, eje, umbral):
+    pixeles_negros = img == 0
+    proyeccion = pixeles_negros.any(axis=eje)
 
-    modificado = reemplazar_false_consecutivo(img_sum, umbral)
-    num_elementos = conteo_parrafos(modificado)
+    proyeccion_limpia = reemplazar_false_consecutivo(proyeccion, umbral)
+    cantidad = cantidad_palabras(proyeccion_limpia)
 
-    return num_elementos
+    return cantidad
 
-def validar_texto(img, car_min=0, car_max=float('inf'), palabras_min=0, palabras_max=float('inf'), axis=0, car_umbral=1, palabra_umbral=10):
+def validar_texto(img, min_caracteres=0, max_caracteres=float('inf'), min_palabras=0, max_palabras=float('inf'), eje=0, umbral_caracteres=1, umbral_palabras=10):
     if img is None or img.size == 0:
         return False
 
-    num_palabras = contar_elementos(img, axis, palabra_umbral)
-    num_car = contar_elementos(img, axis, car_umbral) + num_palabras - 1
+    cantidad_palabras = contar_elementos(img, eje, umbral_palabras)
+    cantidad_caracteres = contar_elementos(img, eje, umbral_caracteres) + cantidad_palabras - 1
 
-    if car_min <= num_car <= car_max and palabras_min <= num_palabras <= palabras_max:
+    if min_caracteres <= cantidad_caracteres <= max_caracteres and min_palabras <= cantidad_palabras <= max_palabras:
         return True
     else:
         return False
@@ -152,41 +154,41 @@ def validar_formulario(campos):
 
     resultados = {}
 
-    criteria = {
-        'nombre': {'palabras_min': 2, 'palabras_max': float('inf'), 'car_min': 1, 'car_max': 25},
-        'edad': {'palabras_min': 1, 'palabras_max': 1, 'car_min': 2, 'car_max': 3},
-        'mail': {'palabras_min': 1, 'palabras_max': 1, 'car_min': 1, 'car_max': 25},
-        'legajo': {'palabras_min': 1, 'palabras_max': 1, 'car_min': 8, 'car_max': 8},
-        'preg': {'palabras_min': 1, 'palabras_max': 1, 'car_min': 1, 'car_max': 1},
-        'comentario': {'palabras_min': 1, 'palabras_max': float('inf'), 'car_min': 1, 'car_max': 25},
+    criterios = {
+        'nombre': {'min_palabras': 2, 'max_palabras': float('inf'), 'min_caracteres': 1, 'max_caracteres': 25},
+        'edad': {'min_palabras': 1, 'max_palabras': 1, 'min_caracteres': 2, 'max_caracteres': 3},
+        'mail': {'min_palabras': 1, 'max_palabras': 1, 'min_caracteres': 1, 'max_caracteres': 25},
+        'legajo': {'min_palabras': 1, 'max_palabras': 1, 'min_caracteres': 8, 'max_caracteres': 8},
+        'preg': {'min_palabras': 1, 'max_palabras': 1, 'min_caracteres': 1, 'max_caracteres': 1},
+        'comentario': {'min_palabras': 1, 'max_palabras': float('inf'), 'min_caracteres': 1, 'max_caracteres': 25},
     }
 
     nombre = campos.get("nombre")
-    resultados["Nombre y apellido"] = 'OK' if validar_texto(nombre == 0, **criteria['nombre']) else 'MAL'
+    resultados["Nombre y apellido"] = 'OK' if validar_texto(nombre == 0, **criterios['nombre']) else 'MAL'
 
     edad = campos.get("edad")
-    resultados["Edad"] = 'OK' if validar_texto(edad == 0, **criteria['edad']) else 'MAL'
+    resultados["Edad"] = 'OK' if validar_texto(edad == 0, **criterios['edad']) else 'MAL'
 
     mail = campos.get("mail")
-    resultados["Mail"] = 'OK' if validar_texto(mail == 0, **criteria['mail']) else 'MAL'
+    resultados["Mail"] = 'OK' if validar_texto(mail == 0, **criterios['mail']) else 'MAL'
 
     legajo = campos.get("legajo")
-    resultados["Legajo"] = 'OK' if validar_texto(legajo == 0, **criteria['legajo']) else 'MAL'
+    resultados["Legajo"] = 'OK' if validar_texto(legajo == 0, **criterios['legajo']) else 'MAL'
 
-    si1 = validar_texto(campos.get("preg1_si") == 0, **criteria['preg'])
-    no1 = validar_texto(campos.get("preg1_no") == 0, **criteria['preg'])
+    si1 = validar_texto(campos.get("preg1_si") == 0, **criterios['preg'])
+    no1 = validar_texto(campos.get("preg1_no") == 0, **criterios['preg'])
     resultados["Pregunta 1"] = 'OK' if (si1 and not no1) or (no1 and not si1) else 'MAL'
 
-    si2 = validar_texto(campos.get("preg2_si") == 0, **criteria['preg'])
-    no2 = validar_texto(campos.get("preg2_no") == 0, **criteria['preg'])
+    si2 = validar_texto(campos.get("preg2_si") == 0, **criterios['preg'])
+    no2 = validar_texto(campos.get("preg2_no") == 0, **criterios['preg'])
     resultados["Pregunta 2"] = 'OK' if (si2 and not no2) or (no2 and not si2) else 'MAL'
 
-    si3 = validar_texto(campos.get("preg3_si") == 0, **criteria['preg'])
-    no3 = validar_texto(campos.get("preg3_no") == 0, **criteria['preg'])
+    si3 = validar_texto(campos.get("preg3_si") == 0, **criterios['preg'])
+    no3 = validar_texto(campos.get("preg3_no") == 0, **criterios['preg'])
     resultados["Pregunta 3"] = 'OK' if (si3 and not no3) or (no3 and not si3) else 'MAL'
 
     comentario = campos.get("comentario")
-    resultados["Comentarios"] = 'OK' if validar_texto(comentario == 0, **criteria['comentario']) else 'MAL'
+    resultados["Comentarios"] = 'OK' if validar_texto(comentario == 0, **criterios['comentario']) else 'MAL'
 
     return resultados
 
@@ -196,16 +198,16 @@ def extraer_tipo_formulario(img):
     umbral = 150
     img_binaria = (encabezado < umbral).astype(np.uint8)
     img_binaria_uint8 = img_binaria * 255
-    num_etiquetas, etiquetas, stats, _ = cv2.connectedComponentsWithStats(img_binaria, 8, cv2.CV_32S)
+    num_etiquetas, etiquetas, estadisticas, _ = cv2.connectedComponentsWithStats(img_binaria, 8, cv2.CV_32S)
 
     area_minima = 45
     area_maxima = 600 
 
     componentes_validas = []
     for i in range(1, num_etiquetas):
-        area = stats[i, cv2.CC_STAT_AREA]
-        ancho = stats[i, cv2.CC_STAT_WIDTH]
-        alto = stats[i, cv2.CC_STAT_HEIGHT]
+        area = estadisticas[i, cv2.CC_STAT_AREA]
+        ancho = estadisticas[i, cv2.CC_STAT_WIDTH]
+        alto = estadisticas[i, cv2.CC_STAT_HEIGHT]
         ratio = ancho / alto if alto > 0 else 0
 
         # Filtro más permisivo para la altura
@@ -216,20 +218,20 @@ def extraer_tipo_formulario(img):
         print("  [ADVERTENCIA] No se detectaron componentes válidas")
         return 'desconocido'
 
-    # elegir la letra del tipo
+    #Elegimos la letra del tipo
     componentes_ordenadas = sorted(componentes_validas,
-                                   key=lambda i: stats[i, cv2.CC_STAT_LEFT])
-    idx_letra = componentes_ordenadas[-1]
-    x = stats[idx_letra, cv2.CC_STAT_LEFT]
-    y = stats[idx_letra, cv2.CC_STAT_TOP]
-    ancho = stats[idx_letra, cv2.CC_STAT_WIDTH]
-    alto = stats[idx_letra, cv2.CC_STAT_HEIGHT]
-    area = stats[idx_letra, cv2.CC_STAT_AREA]
+                                   key=lambda i: estadisticas[i, cv2.CC_STAT_LEFT])
+    indice_letra = componentes_ordenadas[-1]
+    x = estadisticas[indice_letra, cv2.CC_STAT_LEFT]
+    y = estadisticas[indice_letra, cv2.CC_STAT_TOP]
+    ancho = estadisticas[indice_letra, cv2.CC_STAT_WIDTH]
+    alto = estadisticas[indice_letra, cv2.CC_STAT_HEIGHT]
+    area = estadisticas[indice_letra, cv2.CC_STAT_AREA]
     ratio = ancho / alto if alto > 0 else 0
-    letra_mask = (etiquetas == idx_letra).astype(np.uint8)
-    letra_region = letra_mask[y:y+alto, x:x+ancho]
-    perfil_horizontal = np.sum(letra_region, axis=1).astype(float)
-    perfil_vertical = np.sum(letra_region, axis=0).astype(float)
+    mascara_letra = (etiquetas == indice_letra).astype(np.uint8)
+    region_letra = mascara_letra[y:y+alto, x:x+ancho]
+    perfil_horizontal = np.sum(region_letra, axis=1).astype(float)
+    perfil_vertical = np.sum(region_letra, axis=0).astype(float)
 
     #Normalizamos perfil horizontal (de arriba hacia abajo)
     if np.max(perfil_horizontal) > 0:
@@ -251,11 +253,11 @@ def extraer_tipo_formulario(img):
 
     varianza_h = np.var(perfil_h_norm)
 
-    ratio_inferior_superior = tercio_inferior / tercio_superior if tercio_superior > 0.1 else 1
+    relacion_inferior_superior = tercio_inferior / tercio_superior if tercio_superior > 0.1 else 1
 
-    if ratio_inferior_superior >= 1.15:
+    if relacion_inferior_superior >= 1.15:
         tipo = 'A'
-    elif ratio_inferior_superior >= 0.4:
+    elif relacion_inferior_superior >= 0.4:
         tipo = 'B'
     else:
         tipo = 'C'
@@ -309,12 +311,12 @@ def procesar_lote(directorio='.'):
 
         todos_resultados.append(fila)
 
-        es_correcto = all(v == 'OK' for v in resultados.values())
-        lote_para_imagen.append((id_form, tipo_formulario, es_correcto, campos.get('nombre')))
+        formulario_correcto = all(v == 'OK' for v in resultados.values())
+        lote_para_imagen.append((id_form, tipo_formulario, formulario_correcto, campos.get('nombre')))
 
         resultados_por_tipo[tipo_formulario].append({
             'id': id_form,
-            'correcto': es_correcto
+            'correcto': formulario_correcto
         })
 
     print("Descripción de cada formulario")
@@ -343,10 +345,10 @@ def generar_imagen_salida(lote_formularios, directorio_salida='salida'):
     alto_recuadro = 100
     espaciado = 20
 
-    cols = 3
-    filas = (len(lote_formularios) + cols - 1) // cols
+    columnas = 3
+    filas = (len(lote_formularios) + columnas - 1) // columnas
 
-    ancho_total = cols * ancho_recuadro + (cols + 1) * espaciado
+    ancho_total = columnas * ancho_recuadro + (columnas + 1) * espaciado
     alto_total = filas * alto_recuadro + (filas + 1) * espaciado + 50
 
     #Crear imagen blanca
@@ -358,15 +360,15 @@ def generar_imagen_salida(lote_formularios, directorio_salida='salida'):
 
     y_inicio = 60
 
-    for idx, (id_form, tipo_form, es_correcto, nombre_img) in enumerate(lote_formularios):
-        col = idx % cols
-        fila = idx // cols
+    for idx, (id_form, tipo_form, formulario_correcto, nombre_img) in enumerate(lote_formularios):
+        col = idx % columnas
+        fila = idx // columnas
 
         x = espaciado + col * (ancho_recuadro + espaciado)
         y = y_inicio + fila * (alto_recuadro + espaciado)
 
         #Color según resultado
-        if es_correcto:
+        if formulario_correcto:
             color = (0, 255, 0)  #Verde (bien)
             texto_estado = "OK"
         else:
@@ -391,12 +393,12 @@ def generar_imagen_salida(lote_formularios, directorio_salida='salida'):
 
 def guardar_csv(resultados, archivo_salida='validaciones.csv'):
 
-    headers = ['ID', 'Nombre y apellido', 'Edad', 'Mail', 'Legajo',
+    encabezados = ['ID', 'Nombre y apellido', 'Edad', 'Mail', 'Legajo',
                'Pregunta 1', 'Pregunta 2', 'Pregunta 3', 'Comentarios']
 
     with open(archivo_salida, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(headers)
+        writer.writerow(encabezados)
         writer.writerows(resultados)
 
     print(f"Resultados guardados en: {archivo_salida}")
