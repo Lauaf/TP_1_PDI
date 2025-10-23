@@ -82,9 +82,9 @@ def mostrar_ecualizada(imagen: np.ndarray, kernel: tuple[int, int]) -> None:
 
 
 def main():
-    print("=" * 70)
+    print("=" * 45)
     print("EJERCICIO 1: Ecualización Local de Histograma")
-    print("=" * 70)
+    print("=" * 45)
     print()
 
     img_path = Path(__file__).parent / "Imagen_con_detalles_escondidos.tif"
