@@ -8,10 +8,10 @@ def ecualizar(imagen: np.ndarray, kernel: tuple[int, int]) -> np.ndarray:
     img = imagen.copy()
     nueva_img = np.zeros_like(img, dtype=np.float32)
 
-    # Suavizado para bajarle el ruido
+    #Suavizamos para bajar el ruido
     img = cv2.GaussianBlur(img, (5, 5), 0)
 
-    # Pading para bordes
+    #Pading para bordes
     mitad_w = kernel[0] // 2
     mitad_h = kernel[1] // 2
 
@@ -27,23 +27,23 @@ def ecualizar(imagen: np.ndarray, kernel: tuple[int, int]) -> np.ndarray:
         for j in range(imagen.shape[1]):
             # Región que va a usar el histograma
             y_start = i
-            y_end = i + 2 * mitad_h + 1
-            x_start = j
-            x_end = j + 2 * mitad_w + 1
+            y_fin = i + 2 * mitad_h + 1
+            x_inicio = j
+            x_fin = j + 2 * mitad_w + 1
 
-            seccion = img_pad[y_start:y_end, x_start:x_end]
+            seccion = img_pad[y_start:y_fin, x_inicio:x_fin]
 
-            # Histograma local (256 bins)
+            #Histograma local (256 bins)
             histograma = cv2.calcHist([seccion], [0], None, [256], [0, 256])
 
-            # Normalización + CDF
+            #Normalizar + cdf_acumulada
             histograma_norm = histograma / (seccion.shape[0] * seccion.shape[1])
-            cdf = histograma_norm.cumsum()
-            cdf_normalizado = cdf * 255
+            cdf_acumulada = histograma_norm.cumsum()
+            cdf_acumulada_normalizado = cdf_acumulada * 255
 
-            # Mapear el píxel central mediante CDF
+            #Mapeamos el píxel central mediante cdf_acumulada
             pixel_original = img_pad[i + mitad_h, j + mitad_w]
-            nueva_img[i, j] = cdf_normalizado[pixel_original]
+            nueva_img[i, j] = cdf_acumulada_normalizado[pixel_original]
 
     print("OK")
     return nueva_img.astype(np.uint8)
@@ -57,20 +57,20 @@ def mostrar_ecualizada(imagen: np.ndarray, kernel: tuple[int, int]) -> None:
 
     plt.figure(figsize=(15, 5))
 
-    # Imagen ecualizada
+    #Imagen ecualizada
     ax0 = plt.subplot2grid((2, 3), (0, 0), colspan=2, rowspan=2)
     ax0.imshow(nueva_img, cmap="gray")
     ax0.set_title(f"Imagen Ecualizada - Ventana {kernel[0]}x{kernel[1]}", fontsize=12)
     ax0.axis("off")
 
-    # Histograma original
+    #Histograma original
     ax1 = plt.subplot2grid((2, 3), (0, 2))
     ax1.plot(hist_original, color="blue", linewidth=1.5)
     ax1.set_title("Histograma Original", fontsize=10)
     ax1.set_xlim([0, 255])
     ax1.grid(alpha=0.3)
 
-    # Histograma ecualizado
+    #Histograma ecualizado
     ax2 = plt.subplot2grid((2, 3), (1, 2))
     ax2.plot(hist_ecualizada, color="green", linewidth=1.5)
     ax2.set_title("Histograma Ecualizado", fontsize=10)
@@ -87,16 +87,16 @@ def main():
     print("=" * 45)
     print()
 
-    img_path = Path(__file__).parent / "Imagen_con_detalles_escondidos.tif"
+    ruta_imagen = Path(__file__).parent / "Imagen_con_detalles_escondidos.tif"
 
-    if not img_path.exists():
-        print(f"Error: No se encontró la imagen en {img_path}")
+    if not ruta_imagen.exists():
+        print(f"Error: No se encontró la imagen en {ruta_imagen}")
         return
 
-    print(f"Cargando imagen: {img_path.name}")
-    imagen = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+    print(f"Cargando imagen: {ruta_imagen.name}")
+    imagen = cv2.imread(str(ruta_imagen), cv2.IMREAD_GRAYSCALE)
 
-    # Diferentes tamaños de ventans de analisis
+    #Diferentes tamaños de ventans de analisis
     kernels = [
         (5, 5),
         (11, 11),
